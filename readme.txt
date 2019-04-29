@@ -1,5 +1,10 @@
 README
 
+The web interface has built successfully, please enter the following website to access the search engine:
+http://143.89.130.247:8080/form.html
+
+
+
 # COMP4321_2019Spring
 ---------------------------------------------------------
 Group member
