@@ -58,6 +58,7 @@ public class project_database{
 	private static RocksDB inv_word;
     private static RocksDB history;
     private static RocksDB term_weight;
+    private static RocksDB list_keyword;
 
 	private static StopStem stopStem;
 
@@ -88,6 +89,7 @@ public class project_database{
             String path11 = "db/inv_word";
             String path12 = "db/child_parent";
             String path13 = "db/term_weight";
+            String path14 = "db/list_keyword";//in alphabet order
 
             // create/open database
             url = RocksDB.open(options,path1); 
@@ -109,6 +111,7 @@ public class project_database{
             inv_word = RocksDB.open(options,path11);
             child_parent = RocksDB.open(options,path12);
             term_weight = RocksDB.open(options,path13);
+            list_keyword = RocksDB.open(options,path14);
         }
         catch(RocksDBException e)
         {
@@ -156,7 +159,7 @@ public class project_database{
     public static void calculation(int page_no) throws RocksDBException
     {   
     for (int i=1; i< page_no+1; i++){                                                    //calculate the df first
-        System.out.println("page"+ i + "start df calculation: ");
+        //System.out.println("page"+ i + "start df calculation: ");
         String current_page = String.valueOf(i);  
         byte[] content = forward.get((current_page).getBytes());                         //get content from forward db
         if (content == null){continue;}
@@ -171,30 +174,64 @@ public class project_database{
                 String word = lists[0];
                 String word_content = new String(word + " " + df);                       //combine word and df
                 inv_word.put(term_id_lists[0].getBytes(), word_content.getBytes());      //put key, content in inv_word
-                System.out.println("term_id" + term_id_lists[0]+ " df" + new String(inv_word.get(term_id_lists[0].getBytes())));
+                //System.out.println("term_id" + term_id_lists[0]+ " df" + new String(inv_word.get(term_id_lists[0].getBytes())));
             }
         }
     }
 
     String item_no = new String (word.get("max_id".getBytes()));
     int max_term = Integer.parseInt(item_no);
-    for (int i=1; i< max_term; i++){                                                    //calculate the idf
+    for (int i=1; i<= max_term; i++){                                                    //calculate the idf
         String current_term = String.valueOf(i);  
         String term_content = new String (inv_word.get(current_term.getBytes()));
         String[] lists = (new String (term_content).split(" "));                        //split word and df
-        double df =  Integer.parseInt(lists[1]);   
+        double df =  Integer.parseInt(lists[1]);
+        if(df>5){
+            if(lists[0]!=""){
+            char first_letter_char = lists[0].charAt(0);
+            if(first_letter_char-'a'>=0 && first_letter_char-'a'<=25){
+            String first_letter = Character.toString(lists[0].charAt(0));
+            //System.out.println("putting keyword:"+lists[0]+" "+first_letter);
+            byte[] list_content = list_keyword.get(first_letter.getBytes());
+            String new_content="";
+            if(list_content==null){
+                new_content = lists[0];
+            }
+            else{
+                String pre = new String(list_content);
+                new_content = pre + " "+lists[0];
+            }
+            //System.out.println("new content:"+first_letter+" "+new_content);
+            list_keyword.put(first_letter.getBytes(),new_content.getBytes());
+            }
+        }
+        }   
         double N =   page_no;                             
         double idf_no = (Math.log(N/df)/Math.log(2));                                   //calculate the idf
         idf_no = Math.floor(idf_no*1000)/1000;
         idf.put (current_term.getBytes(), (String.valueOf(idf_no)).getBytes());
         //System.out.println("idf: "+ new String (idf.get(current_term.getBytes())));
     }
+        //for debuging!!
+        String[] str_array = new String[26];
+        for(char i ='a';i<='z';i++){
+            String ss = Character.toString(i);
+            //System.out.println(ss);
+            byte[] content_lk = list_keyword.get(ss.getBytes());
+            if(content_lk!=null){
+                str_array[i-'a'] = new String(content_lk);
+                System.out.println(i+" "+str_array[i-'a']);
+
+            }
+        }
+        //for debuging!!
 
     for (int i=1; i< page_no+1; i++){
         //System.out.println("page"+ i + "start: ");
         String current_page = String.valueOf(i);  
         byte[] content = forward.get((current_page).getBytes());                         //get content from forward db
-        if (content == null){continue;}
+        if (content == null){ System.out.println("error in "+ current_page);
+            continue;}
         else {
             String[] term_lists = (new String(content)).split(",");                      //split term_ids                                                    
             String[] max_term_id = term_lists[0].split(" ");                             //get the max number of term ids
@@ -220,9 +257,9 @@ public class project_database{
             }
         
         double final_D =  Math.floor(Math.pow(D,0.5)*1000)/1000;                                               //sqrt root the D
-        String URL = new String (inv_url.get(current_page.getBytes()));
-        byte[] url_content = (URL + " " + String.valueOf(max_tf)+ " "+ String.valueOf(final_D)).getBytes();
-        inv_url.put(current_page.getBytes(), url_content);
+        String pageInfo = new String (page_info.get(current_page.getBytes()));
+        byte[] p_content = (pageInfo + ";" +String.valueOf(final_D)).getBytes();
+        page_info.put(current_page.getBytes(), p_content);
         //System.out.println("inv_url " + (new String (url_content)));
             }
         }
@@ -276,7 +313,7 @@ public class project_database{
         }
         child_parent.put(child_id.getBytes(), content);
         String content_string = new String (content);
-        System.out.println("child_id: " + child_id + " parent_id:" + content_string);
+        //System.out.println("child_id: " + child_id + " parent_id:" + content_string);
     } 
     
 
@@ -324,6 +361,7 @@ public class project_database{
         sb.setLinks(false);
         sb.setURL(curUrl);
         String all_content = sb.getStrings();
+        System.out.println("all_content:" + all_content);
         if (size.equals("-1")){
             int size_count = all_content.length() ;
             size = "Content length: " + String.valueOf(size_count) + " characters"; 
@@ -335,10 +373,10 @@ public class project_database{
             date = "Last Modified date: not found" + "(Crawled at " + new String (String.valueOf(current_date)+")") ;
         } else { date = date.replace(",","");
                  date = "Last Modified: " + date;
-    }
+        }
 
         byte[] key = (new String(String.valueOf(pid))).getBytes();
-        String content_url = title + "," + size + "," + date;
+        String content_url = title + ";" + size + ";" + date;
         byte[] value = content_url.getBytes();
         System.out.println("page info put"+pid+" "+content_url);
         page_info.put(key, value);
@@ -398,7 +436,7 @@ public class project_database{
 
         String stemmedTitle = stopStem.process(title);
         String stemmedContent = stopStem.process(all_content);
-        System.out.println(stemmedTitle);
+        //System.out.println(stemmedTitle);
         //System.out.println(stemmedContent);
         //finish stem process text
         
@@ -475,49 +513,50 @@ public class project_database{
             FileWriter Writer = new FileWriter(filename +".txt");
             int page_id = 1;
             String content = new String(inv_url.get((new String(String.valueOf(page_id))).getBytes()));
-            while (page_id<num) {
+            while (page_id<num+1) {
                 byte[] Url_byte = inv_url.get(new String(String.valueOf(page_id)).getBytes());
                 byte[] pi = page_info.get(new String(String.valueOf(page_id)).getBytes());
                 if(pi!=null){
                 String page_info_byte = new String(pi);
-                //System.out.println(page_info_byte);
-                String[] page_info = page_info_byte.split(",");
-                //System.out.println(page_info[0]);             //write the title
-                //System.out.println (new String(Url_byte)); //write the URL
-                //System.out.println(page_info[2]);             //write the last modifed date
-                //System.out.println(page_info[1]);             //write the size of page
+                String[] page_info = page_info_byte.split(";");
                 String final_content = (page_info[0] + "\n" +new String(Url_byte)+ "\n" + page_info[2] + "\n"+ page_info[1]+ "\n" 
-                + "Keyword: (only top 15 keywords are listed)" + "\n");
+                + "Keyword: (only top 20 keywords are listed)" + "& (tf, df, idf, term_weight)" +"\n");
+                System.out.println(new String(String.valueOf(page_id)));             //debug
 
-                
-                byte [] keyword_info = forward.get((new String(String.valueOf(page_id))).getBytes());      
-                String [] keyword_lists = (new String(keyword_info)).split(",");
-                for(int i = 0; i < keyword_lists.length; i++){
-                    String [] forward_info = keyword_lists[i].split(" ");                         //split to term_id and frequency
-                    byte [] keyword_byte = inv_word.get(forward_info[0].getBytes());              //transfer term_id to keyword and df
-                    String keyword_df = new String (keyword_byte);
-                    String[] keyword = keyword_df.split(" ");
-                    //System.out.print( "debug:" + keyword[0] + " " + forward_info[1] +"; " );
-                    final_content = (final_content + keyword[0] + " " + forward_info[1] + "; ");
-                    if (i >= 14) {break;}
-                }
-                final_content = final_content + "\n" +"child_links: " +"\n";
+                byte [] keyword_info = forward.get((new String(String.valueOf(page_id))).getBytes());
+                byte [] termweight_info = term_weight.get((new String(String.valueOf(page_id))).getBytes());
+                if (termweight_info != null ){
+                    String [] keyword_lists = (new String(keyword_info)).split(",");
+                    String [] termweight_lists = (new String(termweight_info)).split(",");
+                    for(int i = 0; i < keyword_lists.length-1; i++){
+                        String [] forward_info = keyword_lists[i].split(" ");                         //split to term_id and frequency(tf)
+                        byte [] keyword_byte = inv_word.get(forward_info[0].getBytes());              //transfer term_id to keyword and df
+                        String idf_no = new String(idf.get(forward_info[0].getBytes()));              //get the idf 
+                        String [] termweight_split = termweight_lists[i].split(" ");   
+                        String keyword_df = new String (keyword_byte);
+                        String[] keyword = keyword_df.split(" ");
+                        //System.out.print( "debug:" + keyword[0] + " " + forward_info[1] +"; " );
+                        final_content = (final_content + keyword[0] + ", " + forward_info[1] + ", " + keyword[1] + ", " + idf_no + ", " + termweight_split[1] +"\n");
+                        if (i >= 19) {break;}
+                    }} else {final_content = final_content+ "no word exist" + "\n";}
+                final_content = page_id +"." + final_content + "\n" +"child_links:(only top 20) " +"\n";
 
                 byte [] child_info = parent_child_relation.get((new String(String.valueOf(page_id))).getBytes());  //get the child_id of child
                 if (child_info != null) {
                     String child_urls = new String (child_info);            //transfer it to split
                     String [] child_url_sets = child_urls.split(",");       
-                    for(int i = 0; i < child_url_sets.length-1; i++){
+                    for(int i = 0; i < child_url_sets.length-1; i++){ 
                         byte [] child_bytes = inv_url.get (child_url_sets[i].getBytes());  //transfer each child_id to child_url
                         String child_url = new String (child_bytes);
                         final_content = final_content + child_url + "\n" ;
+                        if (i >= 19) {break;}
                     }
                 }
                 else{final_content = final_content + "no child_list exist" + "\n";}
                 final_content = final_content + "---------------------------------------------------------------------------" + "\n";
                 Writer.write (final_content);
                 //System.out.println(final_content); //write the final content
-                
+            
             }
                 page_id += 1;
                 content = String.valueOf(inv_url.get((String.valueOf(page_id)).getBytes()));
@@ -538,9 +577,9 @@ public class project_database{
 		 try
         {
 		project_database pdb = new project_database();
-        pdb.crawl("https://www.cse.ust.hk",30);
-        pdb.calculation(30);
-        pdb.print("spider_result",30);
+        pdb.crawl("https://www.cse.ust.hk",100);
+        pdb.calculation(100);
+        pdb.print("spider_result",100);
 		}
         catch(RocksDBException e)
         { System.err.println(e.toString());}
