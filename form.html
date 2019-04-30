@@ -1,0 +1,89 @@
+
+<html> 
+<head> 
+<title> COMP4321 Search Engine </title> 
+<style>
+body {
+	background-color: white;
+	/* background-image: url("dlee.gif"); */
+}
+form {
+	width: 100%;
+	margin: 0 auto; 
+}
+.container {
+    width: 100%;
+	display: flex;
+	flex-direction: row;
+	align-items: center;
+	text-align: center;
+	margin: 0 auto;
+	margin-top: 10px;
+}
+div {
+    width: 500px;
+    height: 50px;
+}
+input{
+    border: none;
+    padding: 10px;
+    margin: 10px;
+    height: 40px;
+    width: 450px;
+    border:1px solid #eaeaea;
+	outline:none;
+	border-radius: 10px;
+	box-shadow: 1px 1px 1px #888888;
+}
+
+input:hover{
+    border-color: #a0a0a0 #b9b9b9 #b9b9b9 #b9b9b9;
+}
+input:focus{
+    border-color:#4d90fe;
+}
+
+input[type="submit"] {
+    border-radius: 2px;
+    background: #f2f2f2;
+    border: 1px solid #f2f2f2;
+    color: #757575;
+    cursor: default;
+    font-size: 14px;
+    font-weight: bold;
+    width: 100px;
+    padding: 0 16px;
+	height:40px;
+	border-radius: 10px;
+}
+input[type="submit"]:hover {
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+    background: #f8f8f8;
+    border: 1px solid #c6c6c6;
+    box-shadow: 0 1px 1px rgba(0,0,0,0.1);
+	color: #222;
+	border-radius: 10px;
+}
+.textbox {
+	font-size: 35px;
+	text-align: center;
+	margin: 0 auto;
+	margin-top: 250px;
+}
+
+</style>
+</head> 
+<body>
+	<div class="textbox">
+		<b>COMP4321 Search Engine</b>
+	</div>
+	<div class="container">
+		<form method="post" action="afterSubmit.jsp"> 
+			<input type="text" name="txtname"> 
+			<input type="submit" value="Search" style="cursor:pointer"> 
+		</form> 
+	</div>
+</body> 
+</html> 
+ 
+ 

@@ -1,9 +1,6 @@
 README
-
-The web interface has built successfully, please enter the following website to access the search engine:
+You can access the web directly from the following link:
 http://143.89.130.247:8080/form.html
-
-
 
 # COMP4321_2019Spring
 ---------------------------------------------------------
@@ -13,66 +10,80 @@ Xu, Feiting(fxuaf)  20329359
 Lam Hon Wa(hwlamad) 20348745
 Li, Junze(jlicx)    20413186
 
-## Aim
----------------------------------------------------------
-Develop a web-based search engine with following functions:
-	1. A spider (or called a crawler) function to fetch pages recursively from a given web site
-	2. An indexer which extracts keywords from a page and inserts them into an inverted file
-	3. A retrieval function that compares a list of query terms against the inverted file and returns the top documents, up to a maximum of 50, to the user in a ranked order according to the vector space model.  As noted about, phrase must be supported, e.g., “hong kong” universities
-	4. A web interface that accepts a user query in a text box, submits the query to the search engine, and displays the returned results to the user
 
 
 ## File Structure
 ---------------------------------------------------------
--project
-   -db
-   -lib
-	 -rocksdbjni-6.0.0-linux64.jar
-	 -htmlparser.jar
-	 -jsoup-1.8.1.jar
-	 -StopStem.jar
-   -project_database.java
-   -stopwords.txt
+ -form.html
+ -afterSubmit.jsp
+ -keywordList.jsp
+ -queryHistory.jsp
+ -similarPages.jsp
+ -project_database.java
+ -WEB-INF
+|     -lib
+|    |    -htmlpraser.jar
+|    |    -rocksdbini-6.0.0-linux64.jar
+|    |    -jsoup-1.8.1.jar
+|
+|     -classes
+|    |
+|    |      -Database
+|    |     |     -Search.java
+|    |     |     -stopwords.txt
+|    |     |     -StopStem.class          
+|    |     |     -lib
+|    |     |    |     -rocksdbjni-6.0.0-linux64.jar
+|    |     |    |     -htmlparser.jar
+|    |     |    |     -jsoup-1.8.1.jar
+|    |     |    |     -StopStem.jar
+ -lib
+|     -rocksdbjni-6.0.0-linux64.jar
+|     -htmlparser.jar
+|     -jsoup-1.8.1.jar
+|     -StopStem.jar
+ -db
 
 
 
-## Instruction
+## Installation procedure
 ---------------------------------------------------------
-Put project_database.java
-	stopwords.txt			in ROOT/project
 
-Put htmlparser.jar
-	rocksdbjni-6.0.0-linux64.jar
-	jsoup-1.8.1.jar
-	StopStem.jar			in ROOT/project/lib
+1.	Put below files in ROOT/WEB-INF/classes/Database:
+	-project_database.java
+	-stopwords.txt
+	-StopStem.class
 
-create directory ROOT/project/db
+2.	Put below files in ROOT/WEB-INF/classes/Database/lib:
+	-htmlpraser.jar
+	-rocksdbini-6.0.0-linux64.jar
+	-jsoup-1.8.1.jar
 
+3.	Create directory db in the ROOT folder
 
+4.	Compile the file with following command in the Database file:
+	javac -cp .:lib/* project_database.java
 
-## Crawler
----------------------------------------------------------
-compile
+5.	Run the file with following command:
+	java -cp lib/*:. project_database
 
-javac -cp .:lib/* project_database.java
+6.	Put below files in ROOT/WEB-INF/classes/Database:
+	-Search.java
 
+7.	Compile the file with following command:
+	javac -cp .:lib/* Search.java
 
-run
+8.	Put below files in ROOT/WEB-INF/lib:
+	-htmlpraser.jar
+	-rocksdbini-6.0.0-linux64.jar
+	-jsoup-1.8.1.jar
 
-java -cp lib/*:. project_database
+9.	Put below files in ROOT:
+	form.html
+	afterSubmit.jsp
+	keywordList.jsp
+	queryHistory.jsp
+	similarPages.jsp
 
+10.	visit VM_location:8080/form.html to use the search engine
 
-
-## Output
----------------------------------------------------------
-spider_result.txt		in ROOT/project
-
-
-
-## Remarks
----------------------------------------------------------
-You may recompile StopStem.java in order to reproduce the StopStem.jar
-Make sure stopwords.txt is in the same directory with StopStem.java
-
-javac StopStem.java
-jar -cvf StopStem.jar StopStem.class NewString.class Porter.class

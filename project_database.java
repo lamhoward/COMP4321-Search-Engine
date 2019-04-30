@@ -186,8 +186,10 @@ public class project_database{
         String term_content = new String (inv_word.get(current_term.getBytes()));
         String[] lists = (new String (term_content).split(" "));                        //split word and df
         double df =  Integer.parseInt(lists[1]);
-        if(df>5){
-            if(lists[0]!=""){
+        if(df>10 && lists!=null){
+            if(!lists[0].equals("") && lists[0]!=null && !lists[0].equals("\n") && !lists[0].equals("\t")
+                && lists[0].matches("^[a-zA-Z]*$")){
+               // System.out.println("lists[0]: "+lists[0]);
             char first_letter_char = lists[0].charAt(0);
             if(first_letter_char-'a'>=0 && first_letter_char-'a'<=25){
             String first_letter = Character.toString(lists[0].charAt(0));
@@ -212,19 +214,19 @@ public class project_database{
         idf.put (current_term.getBytes(), (String.valueOf(idf_no)).getBytes());
         //System.out.println("idf: "+ new String (idf.get(current_term.getBytes())));
     }
-        //for debuging!!
-        String[] str_array = new String[26];
-        for(char i ='a';i<='z';i++){
-            String ss = Character.toString(i);
-            //System.out.println(ss);
-            byte[] content_lk = list_keyword.get(ss.getBytes());
-            if(content_lk!=null){
-                str_array[i-'a'] = new String(content_lk);
-                System.out.println(i+" "+str_array[i-'a']);
+        // //for debuging!!
+        // String[] str_array = new String[26];
+        // for(char i ='a';i<='z';i++){
+        //     String ss = Character.toString(i);
+        //     //System.out.println(ss);
+        //     byte[] content_lk = list_keyword.get(ss.getBytes());
+        //     if(content_lk!=null){
+        //         str_array[i-'a'] = new String(content_lk);
+        //         System.out.println(i+" "+str_array[i-'a']);
 
-            }
-        }
-        //for debuging!!
+        //     }
+        // }
+        // //for debuging!!
 
     for (int i=1; i< page_no+1; i++){
         //System.out.println("page"+ i + "start: ");
@@ -303,13 +305,13 @@ public class project_database{
 
     public static void addEntry_child_parent(String child_id, int parent_id) throws RocksDBException
     {
-        
         byte[] content = child_parent.get(child_id.getBytes());
+        String parent = new String (String.valueOf(parent_id));
         if (content == null) {
-            content = (String.valueOf(parent_id)).getBytes();
+            content = parent.getBytes();
         }
         else{
-            content = (new String(content) +" "+ String.valueOf(parent_id)).getBytes();
+            content = (new String(content) +","+ parent).getBytes();
         }
         child_parent.put(child_id.getBytes(), content);
         String content_string = new String (content);
@@ -361,7 +363,7 @@ public class project_database{
         sb.setLinks(false);
         sb.setURL(curUrl);
         String all_content = sb.getStrings();
-        System.out.println("all_content:" + all_content);
+        //System.out.println("all_content:" + all_content);
         if (size.equals("-1")){
             int size_count = all_content.length() ;
             size = "Content length: " + String.valueOf(size_count) + " characters"; 
@@ -412,7 +414,7 @@ public class project_database{
                 if (test == true){
                     cid_check[max_j]= cid;
                     //System.out.println("cid&child: " +String.valueOf(cid) + " " + test);
-                    addEntry_child_parent(String.valueOf(cid), pid);
+                    addEntry_child_parent(new String(String.valueOf(cid)), pid);
                     child_id += (new String(String.valueOf(cid))+",");
                     max_j ++;
                 }
@@ -448,6 +450,8 @@ public class project_database{
         Map<Integer,Integer> map = new HashMap<>();
         List<Integer> outputArray = new ArrayList<>();
         for(int i=0;i<strArr.length;i++){
+             if(!strArr[i].equals("") && strArr[i]!=null && !strArr[i].equals("\n") && !strArr[i].equals("\t")
+                && strArr[i].matches("^[a-zA-Z]*$") && (strArr[i].length()<=15)){
             //each term
             pos++;
             int tid = get_wordID(strArr[i]);
@@ -458,14 +462,18 @@ public class project_database{
             map.put(tid,count+1);
             outputArray.add(tid);
         }
+        }
 
         // add title to database 5
         int title_pos = 0;
         for(int j=0;j<strTitle.length;j++){
             //each term
+           if(!strTitle[j].equals("") && strTitle[j]!=null && !strTitle[j].equals("\n") && !strTitle[j].equals("\t")
+                && strTitle[j].matches("^[a-zA-Z]*$")){
             title_pos++;
             int tid = get_wordID(strTitle[j]);
             addEntry_title_inv(tid,pid,title_pos);
+            }
             //System.out.println("adding inv "+tid+" "+pid+" "+" "+title_pos);
 
         }
@@ -521,7 +529,7 @@ public class project_database{
                 String[] page_info = page_info_byte.split(";");
                 String final_content = (page_info[0] + "\n" +new String(Url_byte)+ "\n" + page_info[2] + "\n"+ page_info[1]+ "\n" 
                 + "Keyword: (only top 20 keywords are listed)" + "& (tf, df, idf, term_weight)" +"\n");
-                System.out.println(new String(String.valueOf(page_id)));             //debug
+                //System.out.println(new String(String.valueOf(page_id)));             //debug
 
                 byte [] keyword_info = forward.get((new String(String.valueOf(page_id))).getBytes());
                 byte [] termweight_info = term_weight.get((new String(String.valueOf(page_id))).getBytes());
@@ -553,6 +561,21 @@ public class project_database{
                     }
                 }
                 else{final_content = final_content + "no child_list exist" + "\n";}
+
+                final_content = final_content + "\n" +"parent_links:(only top 20) " +"\n";
+                byte [] parent_info = child_parent.get((new String(String.valueOf(page_id))).getBytes());  //get the child_id of child
+                if (parent_info != null) {
+                    String parent_urls = new String (parent_info);            //transfer it to split
+                    String [] parent_url_sets = parent_urls.split(",");       
+                    for(int i = 0; i < parent_url_sets.length-1; i++){ 
+                        byte [] parent_bytes = inv_url.get (parent_url_sets[i].getBytes());  //transfer each child_id to child_url
+                        String parent_url = new String (parent_bytes);
+                        final_content = final_content + parent_url + "\n" ;
+                        if (i >= 19) {break;}
+                    }
+                }
+                else{final_content = final_content + "no parent_list exist" + "\n";}
+
                 final_content = final_content + "---------------------------------------------------------------------------" + "\n";
                 Writer.write (final_content);
                 //System.out.println(final_content); //write the final content
@@ -577,9 +600,9 @@ public class project_database{
 		 try
         {
 		project_database pdb = new project_database();
-        pdb.crawl("https://www.cse.ust.hk",100);
-        pdb.calculation(100);
-        pdb.print("spider_result",100);
+        pdb.crawl("https://www.cse.ust.hk",1100);
+        pdb.calculation(1100);
+        pdb.print("spider_result",1100);
 		}
         catch(RocksDBException e)
         { System.err.println(e.toString());}
